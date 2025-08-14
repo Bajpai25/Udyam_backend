@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model UdyamRegistration {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Step 1: Aadhaar Details
+  aadhaarNumber String  @unique
+  isAadhaarVerified Boolean @default(false)
+  aadhaarOtp    String?
+  
+  // Step 2: PAN Details
+  panNumber     String?  @unique
+  isPanVerified Boolean @default(false)
+  
+  // Personal Details (extracted from form)
+  applicantName String?
+  fatherName    String?
+  dateOfBirth   DateTime?
+  gender        String?
+  category      String?
+  
+  // Address Details
+  address       String?
+  pinCode       String?
+  city          String?
+  state         String?
+  district      String?
+  
+  // Contact Details
+  mobileNumber  String?
+  emailId       String?
+  
+  // Business Details (for future steps)
+  enterpriseName String?
+  enterpriseType String?
+  
+  // Form metadata
+  currentStep   Int     @default(1)
+  isCompleted   Boolean @default(false)
+  formData      Json?   // Store complete form data as JSON
+  
+  @@map("udyam_registrations")
+}
+
+model FormField {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  fieldName   String   @unique
+  fieldType   String   // text, select, radio, checkbox, etc.
+  label       String
+  placeholder String?
+  required    Boolean  @default(false)
+  validation  Json?    // Store validation rules as JSON
+  options     Json?    // Store dropdown/radio options as JSON
+  step        Int      // Which step this field belongs to
+  order       Int      // Order within the step
+  
+  @@map("form_fields")
+}
+
+model ValidationRule {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  fieldName String
+  ruleType  String   // regex, length, required, etc.
+  ruleValue String   // The actual rule (regex pattern, min/max length, etc.)
+  message   String   // Error message to display
+  
+  @@unique([fieldName, ruleType], name: "fieldName_ruleType")
+  @@map("validation_rules")
+}

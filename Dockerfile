@@ -1,8 +1,10 @@
 FROM node:18-alpine AS base
 
+# Install OpenSSL and other dependencies
+RUN apk add --no-cache libc6-compat openssl openssl-dev
+
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
@@ -17,10 +19,11 @@ COPY . .
 
 COPY .env* ./
 
-# Generate Prisma client
+ENV PRISMA_CLI_BINARY_TARGETS="linux-musl-openssl-3.0.x"
+ENV PRISMA_CLIENT_ENGINE_TYPE="binary"
+
+# Generate Prisma client with correct binary target
 RUN npx prisma generate
-
-
 
 # Build the application
 RUN npm run build
@@ -34,17 +37,18 @@ ENV NODE_ENV production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nodejs
 
-COPY package.json package-lock.json* ./
+USER nodejs
+COPY --chown=nodejs:nodejs package.json package-lock.json* ./
 RUN npm ci --only=production && npm cache clean --force
 
 # Copy built application
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 COPY --from=builder --chown=nodejs:nodejs /app/.env* ./
-
-USER nodejs
 
 EXPOSE ${PORT:-10000}
 ENV PORT=${PORT:-10000}

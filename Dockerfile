@@ -3,21 +3,30 @@ FROM node:18
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies)
-RUN npm ci
+RUN npm install
 
-# Copy all source code
-COPY . .
+# Copy prisma directory first (important for schema detection)
+COPY prisma ./prisma
 
 # Copy environment file if it exists
 COPY .env* ./
 
-# Make the entrypoint script executable
-RUN chmod +x entrypoint.sh
+# Generate Prisma client (now that schema is available)
+RUN npx prisma generate
 
-EXPOSE 8000
+# Copy rest of the source code
+COPY src ./src
+COPY tsconfig.json ./
 
-ENTRYPOINT ["./entrypoint.sh"]
+# Build the application
+RUN npm run build
+
+# Expose port
+EXPOSE 3001
+
+# Start the application (just like local)
+CMD ["npm", "run", "dev"]

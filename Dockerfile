@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies)
-RUN npm install
+RUN npm ci
 
 # Copy all source code
 COPY . .
@@ -15,14 +15,9 @@ COPY . .
 # Copy environment file if it exists
 COPY .env* ./
 
-# Generate Prisma client
-RUN npx prisma generate
+# Make the entrypoint script executable
+RUN chmod +x entrypoint.sh
 
-# Build the application
-RUN npm run build
+EXPOSE 8000
 
-# Expose port
-EXPOSE 3001
-
-# Start the application (just like local)
-CMD ["npm", "run", "dev"]
+ENTRYPOINT ["./entrypoint.sh"]

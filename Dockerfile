@@ -6,17 +6,13 @@ WORKDIR /app
 # Copy package files first
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies)
-RUN npm install
-
-# Copy prisma directory first (important for schema detection)
 COPY prisma ./prisma
 
-# Copy environment file if it exists
+# Copy environment file if it exists (needed for prisma generate)
 COPY .env* ./
 
-# Generate Prisma client (now that schema is available)
-RUN npx prisma generate
+# Install all dependencies (postinstall will now work since prisma schema exists)
+RUN npm install
 
 # Copy rest of the source code
 COPY src ./src

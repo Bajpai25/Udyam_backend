@@ -13,6 +13,8 @@ COPY .env* ./
 
 # Install all dependencies (postinstall will now work since prisma schema exists)
 RUN npm install
+# postinstall script will run prisma generate
+RUN npx prisma generate
 
 # Copy rest of the source code
 COPY src ./src
@@ -25,4 +27,10 @@ RUN npm run build
 EXPOSE 3001
 
 # Start the application (just like local)
-CMD ["npm", "run", "dev"]
+# CMD ["npm", "run", "dev"]
+
+# Run migrations (or push schema) before starting the app
+# If you have migrations, keep migrate deploy; if not, use db push
+CMD npx prisma migrate deploy && npm run dev
+# For dev/test DBs without migrations, replace with:
+# CMD npx prisma db push && npm run dev
